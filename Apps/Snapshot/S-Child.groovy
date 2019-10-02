@@ -303,7 +303,10 @@ def updated() {
 def initialize() {
 	setDefaults()
 	if(logEnable) log.debug "In initialize..."
-	if(triggerMode == "On Demand") subscribe(onDemandSwitch, "switch.on", onDemandSwitchHandler)
+    if(triggerMode == "On Demand") {
+        subscribe(onDemandSwitch, "switch.on", onDemandSwitchHandler)
+        subscribe(priorityCheckSwitch, "switch.on", priorityCheckHandler)
+    }
 	if(triggerMode == "Every X minutes") subscribe(repeatSwitch, "switch", repeatSwitchHandler)
 	if(triggerMode == "Real Time") {
 		subscribe(realTimeSwitch, "switch", realTimeSwitchHandler)
@@ -1345,22 +1348,30 @@ def pushNow(){
 	if(logEnable) log.debug "In pushNow..."
 	theMsg = ""
 	if(state.prioritySwitch == "true") {
-		state.wrongSwitchPushMap2 = "PRIORITY SWITCHES IN WRONG STATE \n"
+		state.wrongSwitchPushMap2 = "${app.label} SWITCHES IN WRONG STATE \n"
 		state.wrongSwitchPushMap2 += "${state.wrongSwitchPushMap} \n"
 		theMsg = "${state.wrongSwitchPushMap2} \n"
 	}
 	if(state.priorityContact == "true") {
-		state.wrongContactPushMap2 = "PRIORITY CONTACTS IN WRONG STATE \n"
+		state.wrongContactPushMap2 = "${app.label} CONTACTS IN WRONG STATE \n"
 		state.wrongContactPushMap2 += "${state.wrongContactPushMap} \n"
 		theMsg += "${state.wrongContactPushMap2} \n"
 	}
 	if(state.priorityLock == "true") {
-		state.wrongLockPushMap2 = "PRIORITY LOCKS IN WRONG STATE \n"
+		state.wrongLockPushMap2 = "${app.label} LOCKS IN WRONG STATE \n"
 		state.wrongLockPushMap2 += "${state.wrongLockPushMap} \n"
 		theMsg += "${state.wrongLockPushMap2} \n"
 	}
 	pushMessage = "${theMsg}"
-    if(theMsg) sendPushMessage.deviceNotification(pushMessage)
+    if(theMsg) {
+        log.debug "Pushing report"
+        sendPushMessage.deviceNotification(pushMessage)
+    } else if(pushAll) {
+        log.debug "Pushing nothing-to-report"
+        sendPushMessage.deviceNotification("${app.label}: ALL STATES ARE GOOD")
+    } else if(logEnable) {
+        log.debug "Nothing to push"
+    }
 }
 
 // ********** Normal Stuff **********
